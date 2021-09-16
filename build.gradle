@@ -18,11 +18,15 @@ test {
 
 dependencies {
     implementation platform('org.springframework.boot:spring-boot-dependencies:2.5.4')
+    implementation platform('com.linecorp.armeria:armeria-bom:1.11.0')
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'com.h2database:h2'
+    implementation 'com.squareup.retrofit2:converter-jackson:2.9.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.apache.commons:commons-lang3'
+    testImplementation 'com.linecorp.armeria:armeria-retrofit2'
 }

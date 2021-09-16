@@ -1,9 +1,6 @@
 package guide.todo.controller;
 
-import guide.todo.tasks.Task;
-import guide.todo.tasks.TaskAttributes;
-import guide.todo.tasks.TaskService;
-import guide.todo.tasks.TaskStatus;
+import guide.todo.tasks.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,9 +42,9 @@ class TaskController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     TaskIdResponse create(@RequestBody final TaskCreateRequest taskCreateRequest) {
-        final var taskAttributes = toTaskAttributes(taskCreateRequest);
+        final var taskAttributesInsert = toTaskAttributesInsert(taskCreateRequest);
 
-        final var createdTaskId = taskService.insert(taskAttributes);
+        final var createdTaskId = taskService.insert(taskAttributesInsert);
 
         return toTaskIdResponse(createdTaskId);
     }
@@ -61,6 +58,19 @@ class TaskController {
         final var taskAttributes = toTaskAttributes(taskUpdateRequest);
 
         final var updatedTask = taskService.update(taskId, taskAttributes);
+
+        return toTaskAttributesResponse(updatedTask);
+    }
+
+    @PatchMapping("/{id}")
+    TaskAttributesResponse patch(
+            @PathVariable("id") final String taskIdString,
+            @RequestBody final TaskPatchRequest taskPatchRequest
+    ) {
+        final var taskId = toTaskId(taskIdString);
+        final var taskAttributesPatch = toTaskAttributesPatch(taskPatchRequest);
+
+        final var updatedTask = taskService.patch(taskId, taskAttributesPatch);
 
         return toTaskAttributesResponse(updatedTask);
     }
@@ -82,7 +92,6 @@ class TaskController {
     }
 
 
-
     static TaskAttributes toTaskAttributes(final TaskCreateRequest taskCreateRequest) {
         return new TaskAttributes(
                 taskCreateRequest.getDetails(),
@@ -90,10 +99,23 @@ class TaskController {
         );
     }
 
+    static TaskAttributesInsert toTaskAttributesInsert(TaskCreateRequest taskCreateRequest) {
+        return new TaskAttributesInsert(taskCreateRequest.getDetails());
+    }
+
+
     static TaskAttributes toTaskAttributes(final TaskUpdateRequest taskUpdateRequest) {
         final TaskStatus status = toTaskStatus(taskUpdateRequest.getStatus());
         return new TaskAttributes(
                 taskUpdateRequest.getDetails(),
+                status
+        );
+    }
+
+    static TaskAttributesPatch toTaskAttributesPatch(final TaskPatchRequest taskPatchRequest) {
+        final TaskStatus status = toTaskStatus(taskPatchRequest.getStatus());
+        return new TaskAttributesPatch(
+                taskPatchRequest.getDetails(),
                 status
         );
     }
@@ -122,6 +144,10 @@ class TaskController {
     }
 
     static TaskStatus toTaskStatus(final String taskStatusString) {
-        return TaskStatus.valueOf(taskStatusString.toUpperCase(Locale.ENGLISH));
+        try {
+            return TaskStatus.valueOf(taskStatusString.toUpperCase(Locale.ENGLISH));
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

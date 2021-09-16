@@ -6,11 +6,13 @@ import java.util.UUID;
 
 public interface TaskService {
 
-    UUID insert(TaskAttributes taskAttributes);
+    UUID insert(TaskAttributesInsert taskAttributesInsert);
 
     void delete(final UUID taskId);
 
     TaskAttributes update(UUID taskId, TaskAttributes taskAttributes);
+
+    TaskAttributes patch(UUID taskId, TaskAttributesPatch taskAttributesPatch);
 
     Optional<TaskAttributes> select(UUID taskId);
 
@@ -22,8 +24,12 @@ public interface TaskService {
             super();
         }
 
-        public NoEntityException(Throwable e) {
+        public NoEntityException(final Throwable e) {
             super(e);
+        }
+
+        public NoEntityException(final String message) {
+            super(message);
         }
     }
 }

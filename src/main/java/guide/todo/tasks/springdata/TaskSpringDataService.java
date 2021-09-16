@@ -1,11 +1,11 @@
 package guide.todo.tasks.springdata;
 
-import guide.todo.tasks.Task;
-import guide.todo.tasks.TaskAttributes;
-import guide.todo.tasks.TaskService;
+import guide.todo.tasks.*;
 import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.*;
+
+import static java.util.Objects.requireNonNullElse;
 
 class TaskSpringDataService implements TaskService {
     private final TaskSpringDataRepository taskSpringDataRepository;
@@ -15,10 +15,10 @@ class TaskSpringDataService implements TaskService {
     }
 
     @Override
-    public UUID insert(final TaskAttributes taskAttributes) {
+    public UUID insert(final TaskAttributesInsert taskAttributesInsert) {
         final var taskEntity = new TaskEntity(
-                taskAttributes.getDetails(),
-                taskAttributes.getStatus()
+                taskAttributesInsert.getDetails(),
+                TaskStatus.ACTIVE
         );
 
         final var savedEntity = taskSpringDataRepository.save(taskEntity);
@@ -50,6 +50,27 @@ class TaskSpringDataService implements TaskService {
                 taskAttributes.getDetails(),
                 taskAttributes.getStatus()
         );
+
+        final var updatedTaskEntity = taskSpringDataRepository.save(entityToUpdate);
+        return new TaskAttributes(
+                updatedTaskEntity.getDetails(),
+                updatedTaskEntity.getStatus()
+        );
+    }
+
+    @Override
+    public TaskAttributes patch(
+            final UUID taskId,
+            final TaskAttributesPatch taskAttributesPatch
+    ) {
+        final var existingTask = taskSpringDataRepository.findById(taskId);
+        final var entityToUpdate =
+                existingTask.map(it -> new TaskEntity(
+                                it.getId(),
+                                requireNonNullElse(taskAttributesPatch.getDetails(), it.getDetails()),
+                                requireNonNullElse(taskAttributesPatch.getStatus(), it.getStatus())
+                        ))
+                        .orElseThrow(NoEntityException::new);
 
         final var updatedTaskEntity = taskSpringDataRepository.save(entityToUpdate);
         return new TaskAttributes(
