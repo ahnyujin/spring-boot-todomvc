@@ -20,14 +20,14 @@ class TaskEntity {
     protected TaskEntity() {
     }
 
-    public TaskEntity(
+    TaskEntity(
             final String details,
             final TaskStatus status
     ) {
         this(null, details, status);
     }
 
-    public TaskEntity(
+    TaskEntity(
             final UUID id,
             final String details,
             final TaskStatus status
@@ -47,13 +47,5 @@ class TaskEntity {
 
     public TaskStatus getStatus() {
         return status;
-    }
-
-    public void setDetails(String details) {
-        this.details = details;
-    }
-
-    public void setStatus(TaskStatus status) {
-        this.status = status;
     }
 }

@@ -23,13 +23,13 @@ interface TaskRetrofitClient {
     @PUT("/tasks/{id}")
     Call<TaskAttributesClientResponse> update(
             @Path("id") String id,
-            @Body TaskModificationClientRequest attributes
+            @Body TaskAttributesUpdateClientRequest attributes
     );
 
     @PATCH("/tasks/{id}")
     Call<TaskAttributesClientResponse> patch(
             @Path("id") String id,
-            @Body TaskModificationClientRequest attributes
+            @Body TaskAttributesPatchClientRequest attributes
     );
 
     @DELETE("/tasks/{id}")

@@ -1,16 +1,14 @@
 package guide.todo.tasks.retrofit2;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static java.util.Objects.requireNonNull;
 
 class TaskCreateClientRequest {
     private final String details;
 
-    @JsonCreator
-    public TaskCreateClientRequest(
-            @JsonProperty("details") final String details
+    TaskCreateClientRequest(
+            final String details
     ) {
-        this.details = details;
+        this.details = requireNonNull(details);
     }
 
     public String getDetails() {

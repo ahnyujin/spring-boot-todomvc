@@ -7,13 +7,13 @@ class TaskIdClientResponse {
     private final String id;
 
     @JsonCreator
-    public TaskIdClientResponse(
+    TaskIdClientResponse(
             @JsonProperty("id") final String id
     ) {
         this.id = id;
     }
 
-    public String getId() {
+    String getId() {
         return id;
     }
 }

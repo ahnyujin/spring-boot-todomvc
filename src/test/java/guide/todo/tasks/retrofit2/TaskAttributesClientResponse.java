@@ -8,7 +8,7 @@ class TaskAttributesClientResponse {
     private final String status;
 
     @JsonCreator
-    public TaskAttributesClientResponse(
+    TaskAttributesClientResponse(
             @JsonProperty("details") final String details,
             @JsonProperty("status") final String status
     ) {
@@ -16,11 +16,11 @@ class TaskAttributesClientResponse {
         this.status = status;
     }
 
-    public String getDetails() {
+    String getDetails() {
         return details;
     }
 
-    public String getStatus() {
+    String getStatus() {
         return status;
     }
 }

@@ -9,7 +9,7 @@ class TaskClientResponse {
     private final String status;
 
     @JsonCreator
-    public TaskClientResponse(
+    TaskClientResponse(
             @JsonProperty("id") String id,
             @JsonProperty("details") String details,
             @JsonProperty("status") String status
@@ -19,15 +19,15 @@ class TaskClientResponse {
         this.status = status;
     }
 
-    public String getId() {
+    String getId() {
         return id;
     }
 
-    public String getDetails() {
+    String getDetails() {
         return details;
     }
 
-    public String getStatus() {
+    String getStatus() {
         return status;
     }
 }

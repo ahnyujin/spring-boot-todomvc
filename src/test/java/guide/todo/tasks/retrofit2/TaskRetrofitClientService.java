@@ -46,7 +46,7 @@ class TaskRetrofitClientService implements TaskService {
             final TaskAttributes taskAttributes
     ) {
         final var requestTaskId = toRequestTaskId(taskId);
-        final var requestTaskUpdateRequest = new TaskModificationClientRequest(
+        final var requestTaskUpdateRequest = new TaskAttributesUpdateClientRequest(
                 taskAttributes.getDetails(),
                 toRequestTaskStatus(taskAttributes.getStatus())
         );
@@ -72,7 +72,7 @@ class TaskRetrofitClientService implements TaskService {
         } else {
             requestTaskStatus = toRequestTaskStatus(taskAttributesPatch.getStatus());
         }
-        final var taskModificationRetrofitRequest = new TaskModificationClientRequest(
+        final var taskModificationRetrofitRequest = new TaskAttributesPatchClientRequest(
                 taskAttributesPatch.getDetails(),
                 requestTaskStatus
         );
