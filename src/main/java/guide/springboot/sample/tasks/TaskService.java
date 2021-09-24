@@ -11,5 +11,9 @@ public interface TaskService {
 
     List<Task> selectAll();
 
+    Task update(final TaskIdentifier identifier, final TaskAttributes attributes);
+
     Optional<Task> patch(final TaskIdentifier identifier, final TaskAttributes attributes);
+
+    void delete(final TaskIdentifier identifier);
 }

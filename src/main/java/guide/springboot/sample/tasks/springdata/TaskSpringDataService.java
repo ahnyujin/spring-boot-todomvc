@@ -5,25 +5,20 @@ import guide.springboot.sample.tasks.Task;
 import guide.springboot.sample.tasks.TaskAttributes;
 import guide.springboot.sample.tasks.TaskIdentifier;
 import guide.springboot.sample.tasks.TaskService;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class TaskSpringDataService implements TaskService {
+    private static final Logger logger = LoggerFactory.getLogger(TaskServiceConfig.class);
 
     private final TaskSpringDataRepository taskSpringDataRepository;
     private final UuidGenerator uuidGenerator;
 
-    TaskSpringDataService(final TaskSpringDataRepository taskSpringDataRepository, UuidGenerator uuidGenerator) {
-        this.taskSpringDataRepository = taskSpringDataRepository;
-        this.uuidGenerator = uuidGenerator;
-    }
-
-    static Task toService(final TaskEntity entity) {
-        final var identifier = new TaskIdentifier(entity.getId());
-        return new Task(identifier, entity.getDetails(), entity.getStatus());
-    }
 
     @Override
     public TaskIdentifier insert(TaskAttributes attributes) {
@@ -55,6 +50,17 @@ public class TaskSpringDataService implements TaskService {
     }
 
     @Override
+    public Task update(TaskIdentifier identifier, TaskAttributes attributes) {
+
+        final var id = identifier.getValue();
+        final var existingTask = taskSpringDataRepository.findById(id).orElseThrow();
+
+        final var entityToUpdate = new TaskEntity(id, attributes.getDetails(), attributes.getStatus());
+        final var updatedTaskEntity = taskSpringDataRepository.save(entityToUpdate);
+        return toService(updatedTaskEntity);
+    }
+
+    @Override
     public Optional<Task> patch(TaskIdentifier identifier, TaskAttributes attributes) {
 
         final var id = identifier.getValue();
@@ -63,5 +69,26 @@ public class TaskSpringDataService implements TaskService {
 
         patchedTask.ifPresent(o -> taskSpringDataRepository.save(o));
         return patchedTask.map(TaskSpringDataService::toService);
+    }
+
+    @Override
+    public void delete(TaskIdentifier identifier) {
+
+        final var id = identifier.getValue();
+        try {
+            taskSpringDataRepository.deleteById(id);
+        } catch (EmptyResultDataAccessException e) {
+            logger.info("[task delete] No task Entity of id=" + id);
+        }
+    }
+
+    TaskSpringDataService(final TaskSpringDataRepository taskSpringDataRepository, UuidGenerator uuidGenerator) {
+        this.taskSpringDataRepository = taskSpringDataRepository;
+        this.uuidGenerator = uuidGenerator;
+    }
+
+    static Task toService(final TaskEntity entity) {
+        final var identifier = new TaskIdentifier(entity.getId());
+        return new Task(identifier, entity.getDetails(), entity.getStatus());
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -50,9 +51,13 @@ public class TaskController {
         return new TaskIdentifierJson(identifier.getValue());
     }
 
-    static TaskJson toJson(final Task task) {
-        final var id = task.getIdentifier().getValue();
-        return new TaskJson(id, task.getDetails(), task.getStatus());
+    @PutMapping("/{id}")
+    ResponseEntity update(@Uuid @PathVariable("id") final String id, @RequestBody final TaskAttributeJson taskAttributeJson) {
+        final var identifier = new TaskIdentifier(id);
+        final var request = new TaskAttributes(taskAttributeJson.getId(), taskAttributeJson.getDetails(), taskAttributeJson.getStatus());
+
+        final var updatedTask = taskService.update(identifier, request);
+        return ResponseEntity.ok().body(toJson(updatedTask));
     }
 
     @PatchMapping("/{id}")
@@ -64,4 +69,14 @@ public class TaskController {
         return ResponseEntity.of(patchedTask.map(TaskController::toJson));
     }
 
+    @DeleteMapping("/{id}")
+    void delete(@Uuid @PathVariable("id") final String id){
+        final var identifier = new TaskIdentifier(id);
+        taskService.delete(identifier);
+    }
+
+    static TaskJson toJson(final Task task) {
+        final var id = task.getIdentifier().getValue();
+        return new TaskJson(id, task.getDetails(), task.getStatus());
+    }
 }
