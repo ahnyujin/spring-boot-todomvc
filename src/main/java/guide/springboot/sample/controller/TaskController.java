@@ -1,13 +1,13 @@
 package guide.springboot.sample.controller;
 
-import guide.springboot.sample.lang.validation.Uuid;
 import guide.springboot.sample.tasks.*;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,17 +25,17 @@ public class TaskController {
         final var tasks = taskService.selectAll();
 
         return tasks.stream()
-                .map(TaskController::toJson)
+                .map(TaskController::toTaskResponse)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<TaskResponse> retrieveById(@Uuid @PathVariable("id") final String id) {
-        final var identifier = new TaskIdentifier(id);
+    Optional<TaskAttributesResponse> retrieveById(@PathVariable("id") final String taskIdString) {
+        final var taskId = toTaskId(taskIdString);
 
-        final var task = taskService.select(identifier);
+        final var task = taskService.select(taskId);
 
-        return ResponseEntity.of(task.map(TaskController::toJson));
+        return task.map(TaskController::toTaskAttributesResponse);
     }
 
     @PostMapping
@@ -43,38 +43,52 @@ public class TaskController {
     TaskIdResponse create(@RequestBody final TaskCreateRequest taskCreateRequest) {
         final var taskAttributesInsert = new TaskAttributesInsert(taskCreateRequest.getDetails());
 
-        final var createdTaskIdentifier = taskService.insert(taskAttributesInsert);
+        final var createdTaskId = taskService.insert(taskAttributesInsert);
 
-        return new TaskIdResponse(createdTaskIdentifier.getValue());
+        return toTaskIdResponse(createdTaskId);
     }
 
     @PutMapping("/{id}")
-    ResponseEntity update(@Uuid @PathVariable("id") final String id, @RequestBody final TaskUpdateRequest taskUpdateRequest) {
-        final var identifier = new TaskIdentifier(id);
+    TaskAttributesResponse update(@PathVariable("id") final String taskIdString, @RequestBody final TaskUpdateRequest taskUpdateRequest) {
+        final var taskId = toTaskId(taskIdString);
         final var request = new TaskAttributes( taskUpdateRequest.getDetails(), toTaskStatus(taskUpdateRequest.getStatus()));
 
-        final var updatedTask = taskService.update(identifier, request);
-        return ResponseEntity.ok().body(toJson(updatedTask));
+        final var updatedTask = taskService.update(taskId, request);
+        return toTaskAttributesResponse(updatedTask);
     }
 
     @PatchMapping("/{id}")
-    ResponseEntity<TaskResponse> patch(@Uuid @PathVariable("id") final String id, @RequestBody final TaskPatchRequest taskPatchRequest) {
-        final var identifier = new TaskIdentifier(id);
-        final var request = new TaskAttributesPatch(taskPatchRequest.getDetails(), toTaskStatus(taskPatchRequest.getStatus()));
+    TaskAttributesResponse patch(@PathVariable("id") final String taskIdString, @RequestBody final TaskPatchRequest taskPatchRequest) {
+        final var taskId = toTaskId(taskIdString);
+        final var taskAttributesPatch = new TaskAttributesPatch(taskPatchRequest.getDetails(), toTaskStatus(taskPatchRequest.getStatus()));
 
-        final var patchedTask = taskService.patch(identifier, request);
-        return ResponseEntity.of(patchedTask.map(TaskController::toJson));
+        final var patchedTask = taskService.patch(taskId, taskAttributesPatch);
+        return toTaskAttributesResponse(patchedTask);
     }
 
     @DeleteMapping("/{id}")
-    void delete(@Uuid @PathVariable("id") final String id){
-        final var identifier = new TaskIdentifier(id);
-        taskService.delete(identifier);
+    void delete(@PathVariable("id") final String taskIdString){
+        final var taskId = toTaskId(taskIdString);
+        taskService.delete(taskId);
     }
 
-    static TaskResponse toJson(final Task task) {
-        final var id = task.getIdentifier().getValue();
-        return new TaskResponse(id, task.getDetails(), toTaskStatusString(task.getStatus()));
+    static UUID toTaskId(String taskIdString) {
+        return UUID.fromString(taskIdString);
+    }
+
+    static TaskResponse toTaskResponse(final Task task) {
+        return new TaskResponse(task.getId().toString(), task.getDetails(), toTaskStatusString(task.getStatus()));
+    }
+
+    static TaskIdResponse toTaskIdResponse(final UUID id) {
+        return new TaskIdResponse(id.toString());
+    }
+
+    static TaskAttributesResponse toTaskAttributesResponse(final TaskAttributes attributes) {
+        return new TaskAttributesResponse(
+                attributes.getDetails(),
+                toTaskStatusString(attributes.getStatus())
+        );
     }
 
     static String toTaskStatusString(final TaskStatus taskStatus) {

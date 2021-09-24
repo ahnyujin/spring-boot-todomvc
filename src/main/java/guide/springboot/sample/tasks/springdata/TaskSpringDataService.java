@@ -1,6 +1,5 @@
 package guide.springboot.sample.tasks.springdata;
 
-import guide.springboot.sample.lang.UuidGenerator;
 import guide.springboot.sample.tasks.*;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.slf4j.Logger;
@@ -8,32 +7,33 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNullElse;
 
 public class TaskSpringDataService implements TaskService {
     private static final Logger logger = LoggerFactory.getLogger(TaskServiceConfig.class);
 
     private final TaskSpringDataRepository taskSpringDataRepository;
-    private final UuidGenerator uuidGenerator;
 
-
-    @Override
-    public TaskIdentifier insert(TaskAttributesInsert taskAttributesInsert) {
-        final var id = uuidGenerator.generateUuidString();
-
-        final var taskEntity = new TaskEntity(id, taskAttributesInsert.getDetails(), TaskStatus.ACTIVE);
-
-        final var saved = taskSpringDataRepository.save(taskEntity);
-
-        return new TaskIdentifier(saved.getId());
+    TaskSpringDataService(final TaskSpringDataRepository taskSpringDataRepository) {
+        this.taskSpringDataRepository = taskSpringDataRepository;
     }
 
     @Override
-    public Optional<Task> select(TaskIdentifier identifier) {
-        final var id = identifier.getValue();
+    public UUID insert(final TaskAttributesInsert taskAttributesInsert) {
+        final var taskEntity = new TaskEntity(taskAttributesInsert.getDetails(), TaskStatus.ACTIVE);
 
-        return taskSpringDataRepository.findById(id)
-                .map(TaskSpringDataService::toService);
+        final var saved = taskSpringDataRepository.save(taskEntity);
+
+        return saved.getId();
+    }
+
+    @Override
+    public Optional<TaskAttributes> select(final UUID taskId) {
+        return taskSpringDataRepository.findById(taskId)
+                .map(TaskSpringDataService::toTaskAttributes);
     }
 
     @Override
@@ -42,50 +42,54 @@ public class TaskSpringDataService implements TaskService {
         final var tasks = taskSpringDataRepository.findAll();
 
         return tasks.stream()
-                .map(TaskSpringDataService::toService)
+                .map(TaskSpringDataService::toTask)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
-    public Task update(TaskIdentifier identifier, TaskAttributes attributes) {
+    public TaskAttributes update(final UUID taskId, TaskAttributes attributes) {
 
-        final var id = identifier.getValue();
-        final var existingTask = taskSpringDataRepository.findById(id).orElseThrow();
-
-        final var entityToUpdate = new TaskEntity(id, attributes.getDetails(), attributes.getStatus());
+        final var existingTask = taskSpringDataRepository.findById(taskId);
+        if(existingTask.isEmpty()){
+            throw new NoEntityException();
+        }
+        final var entityToUpdate = new TaskEntity(taskId, attributes.getDetails(), attributes.getStatus());
         final var updatedTaskEntity = taskSpringDataRepository.save(entityToUpdate);
-        return toService(updatedTaskEntity);
+        return toTaskAttributes(updatedTaskEntity);
     }
 
     @Override
-    public Optional<Task> patch(TaskIdentifier identifier, TaskAttributesPatch attributes) {
+    public TaskAttributes patch(final UUID taskId, final TaskAttributesPatch taskAttributesPatch) {
 
-        final var id = identifier.getValue();
-        final Optional<TaskEntity> task = taskSpringDataRepository.findById(id);
-        final Optional<TaskEntity> patchedTask = task.map(x -> new TaskEntity(id, Optional.ofNullable(attributes.getDetails()).orElse(x.getDetails()), Optional.ofNullable(attributes.getStatus()).orElse(x.getStatus())));
+        final var existingTask = taskSpringDataRepository.findById(taskId);
+        final var entityToUpdate = existingTask.map(it -> new TaskEntity(it.getId(), requireNonNullElse(taskAttributesPatch.getDetails(), it.getDetails()),
+                requireNonNullElse(taskAttributesPatch.getStatus(), it.getStatus()))).orElseThrow();
 
-        patchedTask.ifPresent(o -> taskSpringDataRepository.save(o));
-        return patchedTask.map(TaskSpringDataService::toService);
+        final var updatedTaskEntity = taskSpringDataRepository.save(entityToUpdate);
+        return new TaskAttributes(updatedTaskEntity.getDetails(), updatedTaskEntity.getStatus());
     }
 
     @Override
-    public void delete(TaskIdentifier identifier) {
+    public void delete(final UUID taskId) {
 
-        final var id = identifier.getValue();
         try {
-            taskSpringDataRepository.deleteById(id);
+            taskSpringDataRepository.deleteById(taskId);
         } catch (EmptyResultDataAccessException e) {
-            logger.info("[task delete] No task Entity of id=" + id);
+            throw new NoEntityException(e);
         }
     }
 
-    TaskSpringDataService(final TaskSpringDataRepository taskSpringDataRepository, UuidGenerator uuidGenerator) {
-        this.taskSpringDataRepository = taskSpringDataRepository;
-        this.uuidGenerator = uuidGenerator;
+
+
+    static Task toTask(final TaskEntity taskEntity) {
+        final var taskId = taskEntity.getId();
+        return new Task(taskId, taskEntity.getDetails(), taskEntity.getStatus());
     }
 
-    static Task toService(final TaskEntity entity) {
-        final var identifier = new TaskIdentifier(entity.getId());
-        return new Task(identifier, entity.getDetails(), entity.getStatus());
+    static TaskAttributes toTaskAttributes(final TaskEntity taskEntity) {
+        return new TaskAttributes(
+                taskEntity.getDetails(),
+                taskEntity.getStatus()
+        );
     }
 }

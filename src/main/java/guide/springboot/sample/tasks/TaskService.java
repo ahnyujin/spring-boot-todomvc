@@ -2,18 +2,34 @@ package guide.springboot.sample.tasks;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface TaskService {
 
-    TaskIdentifier insert(final TaskAttributesInsert taskAttributesInsert);
+    UUID insert(final TaskAttributesInsert taskAttributesInsert);
 
-    Optional<Task> select(final TaskIdentifier identifier);
+    Optional<TaskAttributes> select(final UUID taskId);
 
     List<Task> selectAll();
 
-    Task update(final TaskIdentifier identifier, final TaskAttributes attributes);
+    TaskAttributes update(final UUID taskId, final TaskAttributes attributes);
 
-    Optional<Task> patch(final TaskIdentifier identifier, final TaskAttributesPatch attributes);
+    TaskAttributes patch(final UUID taskId, final TaskAttributesPatch attributesPatch);
 
-    void delete(final TaskIdentifier identifier);
+    void delete(final UUID taskId);
+
+    class NoEntityException extends RuntimeException {
+
+        public NoEntityException() {
+            super();
+        }
+
+        public NoEntityException(final Throwable e) {
+            super(e);
+        }
+
+        public NoEntityException(final String message) {
+            super(message);
+        }
+    }
 }
