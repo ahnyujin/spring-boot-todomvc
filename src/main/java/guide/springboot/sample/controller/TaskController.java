@@ -1,16 +1,13 @@
 package guide.springboot.sample.controller;
 
 import guide.springboot.sample.lang.validation.Uuid;
-import guide.springboot.sample.tasks.Task;
-import guide.springboot.sample.tasks.TaskAttributes;
-import guide.springboot.sample.tasks.TaskIdentifier;
-import guide.springboot.sample.tasks.TaskService;
+import guide.springboot.sample.tasks.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,7 +21,7 @@ public class TaskController {
     }
 
     @GetMapping
-    List<TaskJson> retrieveAll() {
+    List<TaskResponse> retrieveAll() {
         final var tasks = taskService.selectAll();
 
         return tasks.stream()
@@ -33,7 +30,7 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<TaskJson> retrieveById(@Uuid @PathVariable("id") final String id) {
+    ResponseEntity<TaskResponse> retrieveById(@Uuid @PathVariable("id") final String id) {
         final var identifier = new TaskIdentifier(id);
 
         final var task = taskService.select(identifier);
@@ -43,27 +40,27 @@ public class TaskController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    TaskIdentifierJson create(@RequestBody final TaskAttributeJson taskAttributeJson) {
-        final var request = new TaskAttributes(taskAttributeJson.getId(), taskAttributeJson.getDetails(), taskAttributeJson.getStatus());
+    TaskIdResponse create(@RequestBody final TaskCreateRequest taskCreateRequest) {
+        final var taskAttributesInsert = new TaskAttributesInsert(taskCreateRequest.getDetails());
 
-        final var identifier = taskService.insert(request);
+        final var createdTaskIdentifier = taskService.insert(taskAttributesInsert);
 
-        return new TaskIdentifierJson(identifier.getValue());
+        return new TaskIdResponse(createdTaskIdentifier.getValue());
     }
 
     @PutMapping("/{id}")
-    ResponseEntity update(@Uuid @PathVariable("id") final String id, @RequestBody final TaskAttributeJson taskAttributeJson) {
+    ResponseEntity update(@Uuid @PathVariable("id") final String id, @RequestBody final TaskUpdateRequest taskUpdateRequest) {
         final var identifier = new TaskIdentifier(id);
-        final var request = new TaskAttributes(taskAttributeJson.getId(), taskAttributeJson.getDetails(), taskAttributeJson.getStatus());
+        final var request = new TaskAttributes( taskUpdateRequest.getDetails(), toTaskStatus(taskUpdateRequest.getStatus()));
 
         final var updatedTask = taskService.update(identifier, request);
         return ResponseEntity.ok().body(toJson(updatedTask));
     }
 
     @PatchMapping("/{id}")
-    ResponseEntity<TaskJson> patch(@Uuid @PathVariable("id") final String id, @RequestBody final TaskAttributeJson taskAttributeJson) {
+    ResponseEntity<TaskResponse> patch(@Uuid @PathVariable("id") final String id, @RequestBody final TaskPatchRequest taskPatchRequest) {
         final var identifier = new TaskIdentifier(id);
-        final var request = new TaskAttributes(taskAttributeJson.getId(), taskAttributeJson.getDetails(), taskAttributeJson.getStatus());
+        final var request = new TaskAttributesPatch(taskPatchRequest.getDetails(), toTaskStatus(taskPatchRequest.getStatus()));
 
         final var patchedTask = taskService.patch(identifier, request);
         return ResponseEntity.of(patchedTask.map(TaskController::toJson));
@@ -75,8 +72,20 @@ public class TaskController {
         taskService.delete(identifier);
     }
 
-    static TaskJson toJson(final Task task) {
+    static TaskResponse toJson(final Task task) {
         final var id = task.getIdentifier().getValue();
-        return new TaskJson(id, task.getDetails(), task.getStatus());
+        return new TaskResponse(id, task.getDetails(), toTaskStatusString(task.getStatus()));
+    }
+
+    static String toTaskStatusString(final TaskStatus taskStatus) {
+        return taskStatus.name().toLowerCase(Locale.ENGLISH);
+    }
+
+    static TaskStatus toTaskStatus(final String taskStatusString) {
+        try {
+            return TaskStatus.valueOf(taskStatusString.toUpperCase(Locale.ENGLISH));
+        } catch (Exception e){
+            return null;
+        }
     }
 }

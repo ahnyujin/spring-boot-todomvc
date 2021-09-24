@@ -1,25 +1,21 @@
 package guide.springboot.sample.tasks;
 
+import static java.util.Objects.requireNonNull;
+
 public class TaskAttributes {
-    private final String id;
     private final String details;
-    private final String status;
+    private final TaskStatus status;
 
-    public TaskAttributes(String id, String details, String status) {
-        this.id = id;
-        this.details = details;
-        this.status = status;
-    }
-
-    public String getId() {
-        return id;
+    public TaskAttributes(final String details, final TaskStatus status) {
+        this.details = requireNonNull(details);
+        this.status = requireNonNull(status);
     }
 
     public String getDetails() {
         return details;
     }
 
-    public String getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 }

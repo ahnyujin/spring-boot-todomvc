@@ -5,9 +5,9 @@ import java.util.Objects;
 public class Task {
     private final TaskIdentifier identifier;
     private final String details;
-    private final String status;
+    private final TaskStatus status;
 
-    public Task(TaskIdentifier identifier, String details, String status) {
+    public Task(TaskIdentifier identifier, String details, TaskStatus status) {
         this.identifier = identifier;
         this.details = details;
         this.status = status;
@@ -21,7 +21,7 @@ public class Task {
         return details;
     }
 
-    public String getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 

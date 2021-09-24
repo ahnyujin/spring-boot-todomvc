@@ -1,10 +1,7 @@
 package guide.springboot.sample.tasks.springdata;
 
 import guide.springboot.sample.lang.UuidGenerator;
-import guide.springboot.sample.tasks.Task;
-import guide.springboot.sample.tasks.TaskAttributes;
-import guide.springboot.sample.tasks.TaskIdentifier;
-import guide.springboot.sample.tasks.TaskService;
+import guide.springboot.sample.tasks.*;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +18,12 @@ public class TaskSpringDataService implements TaskService {
 
 
     @Override
-    public TaskIdentifier insert(TaskAttributes attributes) {
+    public TaskIdentifier insert(TaskAttributesInsert taskAttributesInsert) {
         final var id = uuidGenerator.generateUuidString();
 
-        final var entity = new TaskEntity(Optional.ofNullable(attributes.getId()).orElse(id), attributes.getDetails(), Optional.ofNullable(attributes.getStatus()).orElse("active"));
+        final var taskEntity = new TaskEntity(id, taskAttributesInsert.getDetails(), TaskStatus.ACTIVE);
 
-        final var saved = taskSpringDataRepository.save(entity);
+        final var saved = taskSpringDataRepository.save(taskEntity);
 
         return new TaskIdentifier(saved.getId());
     }
@@ -61,7 +58,7 @@ public class TaskSpringDataService implements TaskService {
     }
 
     @Override
-    public Optional<Task> patch(TaskIdentifier identifier, TaskAttributes attributes) {
+    public Optional<Task> patch(TaskIdentifier identifier, TaskAttributesPatch attributes) {
 
         final var id = identifier.getValue();
         final Optional<TaskEntity> task = taskSpringDataRepository.findById(id);

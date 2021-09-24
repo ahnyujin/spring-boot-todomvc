@@ -1,5 +1,7 @@
 package guide.springboot.sample.tasks.springdata;
 
+import guide.springboot.sample.tasks.TaskStatus;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -11,12 +13,12 @@ public class TaskEntity {
     @Id
     private String id;
     private String details;
-    private String status;
+    private TaskStatus status;
 
     protected TaskEntity() {
     }
 
-    public TaskEntity(String id, String details, String status) {
+    public TaskEntity(final String id, final String details, final TaskStatus status) {
         this.id = id;
         this.details = details;
         this.status = status;
@@ -30,7 +32,7 @@ public class TaskEntity {
         return details;
     }
 
-    public String getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 }
